@@ -6,7 +6,9 @@
 #include <linux/kvm.h>
 
 #define GUEST_START_ADDR 0x8000
-#define GUEST_CODE_PAGES 16
+#define PAGE_SIZE_4K (4u * 1024u)
+#define PAGE_SIZE_2M (2u * 1024u * 1024u)
+#define PAGE_TABLE_ENTRIES 512u
 
 #define IRQ_NUM   32
 #define IRQ_COUNT 3
@@ -34,7 +36,7 @@ struct vm {
 
 int  vm_init(struct vm *v, size_t mem_size);
 void vm_destroy(struct vm *v);
-void setup_long_mode(struct vm *v, struct kvm_sregs *sregs);
+void setup_long_mode(struct vm *v, struct kvm_sregs *sregs, size_t page_size);
 int  load_guest_image(struct vm *v, const char *image_path, uint64_t load_addr);
 int  inject_irq(struct vm *v, unsigned int vector);
 

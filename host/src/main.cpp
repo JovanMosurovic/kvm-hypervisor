@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    setup_long_mode(&virtualMachine, &specialRegisters);
+    setup_long_mode(&virtualMachine, &specialRegisters, config.pageSize);
 
     if (ioctl(
             virtualMachine.vcpu_fd,
@@ -68,16 +68,12 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * Value initialization with {} initialized all registers to zero
+     * Guest code is linked and loaded at GUEST_START_ADDR.
+     * The stack starts at the top of guest memory.
      */
     registers.rflags = 0x2;
-    registers.rip = 0;
-
-    /*
-     * Hardcoded for now.
-     * It will be updated when memory mapping and page-size support are implemented.
-     */
-    registers.rsp = 2u * 1024u * 1024u;
+    registers.rip = GUEST_START_ADDR;
+    registers.rsp = virtualMachine.mem_size;
 
     if (ioctl(
             virtualMachine.vcpu_fd,
@@ -89,7 +85,7 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * Demonstrate interrupt injection.
+     * Demonstrate interrupt injection
      */
     virtualMachine.run->request_interrupt_window =
         interruptCount > 0;

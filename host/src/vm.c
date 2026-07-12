@@ -125,28 +125,68 @@ static void setup_segments_64(struct kvm_sregs *sregs)
 	sregs->ds = sregs->es = sregs->fs = sregs->gs = sregs->ss = data;
 }
 
-void setup_long_mode(struct vm *v, struct kvm_sregs *sregs)
+static void setup_page_tables_4k(struct vm *v, uint64_t *pd)
 {
-	uint64_t pml4_addr = 0x1000;
+	const size_t page_table_count =
+		v->mem_size / PAGE_SIZE_2M;
+
+	for (size_t pd_index = 0;
+		 pd_index < page_table_count;
+		 ++pd_index) {
+
+		const uint64_t pt_addr =
+			0x4000u + pd_index * PAGE_SIZE_4K;
+
+		uint64_t *pt = (void *)(v->mem + pt_addr);
+
+		pd[pd_index] = pt_addr | PDE64_PRESENT | PDE64_RW | PDE64_USER;
+
+		for (size_t pt_index = 0; pt_index < PAGE_TABLE_ENTRIES; ++pt_index) {
+
+			const uint64_t guest_addr = (pd_index * PAGE_TABLE_ENTRIES + pt_index) * PAGE_SIZE_4K;
+
+			pt[pt_index] = guest_addr | PDE64_PRESENT | PDE64_RW | PDE64_USER;
+		}
+	}
+}
+
+static void setup_page_tables_2m(struct vm *v, uint64_t *pd)
+{
+	const size_t page_count =
+		v->mem_size / PAGE_SIZE_2M;
+
+	for (size_t i = 0; i < page_count; ++i) {
+		const uint64_t guest_addr =
+			i * PAGE_SIZE_2M;
+
+		pd[i] =
+			guest_addr |
+			PDE64_PRESENT |
+			PDE64_RW |
+			PDE64_USER |
+			PDE64_PS;
+	}
+}
+
+void setup_long_mode(struct vm *v, struct kvm_sregs *sregs, size_t page_size)
+{
+	const uint64_t pml4_addr = 0x1000;
 	uint64_t *pml4 = (void *)(v->mem + pml4_addr);
 
-	uint64_t pdpt_addr = 0x2000;
+	const uint64_t pdpt_addr = 0x2000;
 	uint64_t *pdpt = (void *)(v->mem + pdpt_addr);
 
-	uint64_t pd_addr = 0x3000;
+	const uint64_t pd_addr = 0x3000;
 	uint64_t *pd = (void *)(v->mem + pd_addr);
-
-	uint64_t pt_addr = 0x4000;
-	uint64_t *pt = (void *)(v->mem + pt_addr);
 
 	pml4[0] = PDE64_PRESENT | PDE64_RW | PDE64_USER | pdpt_addr;
 	pdpt[0] = PDE64_PRESENT | PDE64_RW | PDE64_USER | pd_addr;
-	pd[0]   = PDE64_PRESENT | PDE64_RW | PDE64_USER | pt_addr;
 
-	for (int i = 0; i < GUEST_CODE_PAGES; i++)
-		pt[i] = (GUEST_START_ADDR + i * 0x1000) | PDE64_PRESENT | PDE64_RW | PDE64_USER;
-
-	pt[511] = 0x6000 | PDE64_PRESENT | PDE64_RW | PDE64_USER;
+	if (page_size == PAGE_SIZE_4K) {
+		setup_page_tables_4k(v, pd);
+	} else {
+		setup_page_tables_2m(v, pd);
+	}
 
 	sregs->cr3  = pml4_addr;
 	sregs->cr4  = CR4_PAE;
