@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <linux/kvm.h>
 
-#define MEM_SIZE         (2u * 1024u * 1024u)
 #define GUEST_START_ADDR 0x8000
 #define GUEST_CODE_PAGES 16
 

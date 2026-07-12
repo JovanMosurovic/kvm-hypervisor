@@ -1,10 +1,17 @@
-CC     = gcc
-CFLAGS = -Wall -Wextra
+CC       = gcc
+CXX      = g++
+CPPFLAGS = -Iinc
+CFLAGS   = -Wall -Wextra
+CXXFLAGS = -std=c++17 -Wall -Wextra
+LDLIBS   = -pthread
 
 BUILD_DIR ?= build
 
-SRCS = $(wildcard src/*.c)
-OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+C_SRCS   = $(wildcard src/*.c)
+CXX_SRCS = $(wildcard src/*.cpp)
+C_OBJS   = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(C_SRCS))
+CXX_OBJS = $(patsubst src/%.cpp,$(BUILD_DIR)/%.o,$(CXX_SRCS))
+OBJS     = $(C_OBJS) $(CXX_OBJS)
 DEPS = $(OBJS:.o=.d)
 
 BIN = $(BUILD_DIR)/hypervisor
@@ -17,10 +24,13 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -Iinc -MMD -MP -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c -o $@ $<
+
+$(BUILD_DIR)/%.o: src/%.cpp | $(BUILD_DIR)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c -o $@ $<
 
 $(BIN): $(OBJS)
-	$(CC) $(OBJS) -lpthread -o $@
+	$(CXX) $(OBJS) $(LDLIBS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
