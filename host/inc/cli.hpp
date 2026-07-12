@@ -12,6 +12,7 @@ enum class CliStatus {
 
 struct Config {
     std::size_t memorySize = 0;
+    std::size_t pageSize = 0;
     std::string guestImage;
 };
 
