@@ -1,7 +1,15 @@
 If:
   PathMatch: guest/.*
 CompileFlags:
-  Add: [--target=x86_64-unknown-linux-gnu, -m64, -I../inc, -I../../common]
+  Add:
+    - --target=x86_64-unknown-linux-gnu
+    - -m64
+    - -ffreestanding
+    - -fno-stack-protector
+    - -mno-red-zone
+    - -mgeneral-regs-only
+    - -I../inc
+    - -I../../common
 ---
 If:
   PathMatch: host/.*

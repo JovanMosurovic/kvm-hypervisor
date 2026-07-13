@@ -4,14 +4,12 @@
 
 static struct idt_entry idt[IDT_ENTRIES];
 
-/*
-	"general-regs-only" sprečava GCC da emituje SSE instrukcije, koje su zabranjene unutar
-	__attribute__((interrupt)) handlera
-*/
-static void __attribute__((interrupt, target("general-regs-only")))
+/* FPU and SIMD state is not initialized, so interrupt handlers use only general-purpose registers. */
+static void __attribute__((interrupt))
 irq0_handler(struct interrupt_frame *frame)
 {
 	const char *s;
+	(void)frame;
 
 	for (s = "IRQ0 received!\n"; *s; ++s)
 		outb(0xE9, *s);

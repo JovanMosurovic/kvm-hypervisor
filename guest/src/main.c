@@ -67,8 +67,9 @@ _start(void)
 	outb(0xE9, input);
 	outb(0xE9, '\n');
 
-	const char message[] = "File I/O works!";
-	char buffer[sizeof(message)] = { 0 };
+	static const char message[] = "File I/O works!";
+	char buffer[sizeof(message)];
+	buffer[sizeof(buffer) - 1] = '\0';
 	int fd = open("guest.txt", O_RDWR | O_CREATE);
 	int bytes_written = -1;
 	int seek_result = -1;

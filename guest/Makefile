@@ -1,5 +1,6 @@
 CC = gcc
 CPPFLAGS = -Iinc -I../common
+CFLAGS = -m64 -ffreestanding -fno-pic -fno-stack-protector -mno-red-zone -mgeneral-regs-only -Wall -Wextra
 
 BUILD_DIR ?= build
 
@@ -17,7 +18,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
-	$(CC) $(CPPFLAGS) -m64 -ffreestanding -fno-pic -MMD -MP -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c -o $@ $<
 
 $(IMG): $(OBJS) guest.ld
 	ld -T guest.ld $(OBJS) -o $@
