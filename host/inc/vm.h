@@ -13,16 +13,18 @@
 #define IRQ_NUM   32
 #define IRQ_COUNT 3
 
-#define PDE64_PRESENT (1u << 0)
-#define PDE64_RW      (1u << 1)
-#define PDE64_USER    (1u << 2)
-#define PDE64_PS      (1u << 7)
+/* Page table entry flags */
+#define PDE64_PRESENT (1u << 0) /* The mapped page or next-level table is present */
+#define PDE64_RW      (1u << 1) /* Allows writing to the mapped page */
+#define PDE64_USER    (1u << 2) /* Allows access from user mode (ring 3) */
+#define PDE64_PS      (1u << 7) /* Maps a 2 MiB page directly from the page directory */
 
-#define CR0_PE   (1u << 0)
-#define CR0_PG   (1u << 31)
-#define CR4_PAE  (1u << 5)
-#define EFER_LME (1u << 8)
-#define EFER_LMA (1u << 10)
+/* Control register and EFER flags */
+#define CR0_PE   (1u << 0)  /* CR0: enables protected mode */
+#define CR0_PG   (1u << 31) /* CR0: enables paging */
+#define CR4_PAE  (1u << 5)  /* CR4: enables the page table format required by long mode */
+#define EFER_LME (1u << 8)	/* EFER: enables long mode */
+#define EFER_LMA (1u << 10)	/* EFER: indicates that long mode is active */
 
 struct vm {
 	int kvm_fd;

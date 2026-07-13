@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 
+// Shared by all VM's
 struct SharedState {
     std::mutex consoleMutex;
     std::mutex serialInputMutex;

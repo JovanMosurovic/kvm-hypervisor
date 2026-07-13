@@ -18,7 +18,7 @@ namespace {
     {
         for (const std::string& configuredPath : config.sharedFiles) {
             std::error_code error;
-            const std::filesystem::path path = std::filesystem::canonical(configuredPath, error);
+            const std::filesystem::path path = std::filesystem::canonical(configuredPath, error); //convert file path to absolute path
 
             if (error || !std::filesystem::is_regular_file(path, error)) {
                 std::cerr << "Error: shared file '" << configuredPath << "' does not exist or is not a regular file\n";
@@ -32,7 +32,7 @@ namespace {
                 return false;
             }
 
-            if (!sharedState.sharedFiles.emplace(name, path.string()).second) {
+            if (!sharedState.sharedFiles.emplace(name, path.string()).second) {     // pair "guest.txt" -> "/tmp/aor2/guest.txt"
                 std::cerr << "Error: multiple shared files use the guest name '" << name << "'\n";
                 return false;
             }
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         guestContexts[i].memorySize = config.memorySize;
         guestContexts[i].pageSize = config.pageSize;
         guestContexts[i].imagePath = config.guestImages[i];
-        guestContexts[i].sharedState = &sharedState;
+        guestContexts[i].sharedState = &sharedState; // Every VM gets separate GuestContext, but all of them point to the same sharedState
     }
 
     std::size_t startedThreads = 0;

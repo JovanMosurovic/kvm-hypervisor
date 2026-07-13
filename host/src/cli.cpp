@@ -115,6 +115,7 @@ CliResult parseArguments(int argc, char *argv[])
     bool guestSet = false;
     bool fileSet = false;
 
+    //starting from 1 -> argv[0] is the program name
     for (int i = 1; i < argc; ++i) {
         const std::string_view argument = argv[i];
 
@@ -183,7 +184,7 @@ CliResult parseArguments(int argc, char *argv[])
                     break;
                 }
 
-                result.config.guestImages.emplace_back(argv[++i]);
+                result.config.guestImages.emplace_back(argv[++i]); // add string at the end of guestImages vector
             }
 
             if (result.config.guestImages.empty()) {
