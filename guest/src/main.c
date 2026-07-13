@@ -54,6 +54,17 @@ _start(void)
 	for (s = "Hello, world!\n"; *s; ++s)
 		outb(0xE9, *s);
 
+	for (s = "Enter one character: "; *s; ++s)
+		outb(0xE9, *s);
+
+	uint8_t input = inb(0xE9);
+
+	for (s = "\nGuest received: "; *s; ++s)
+		outb(0xE9, *s);
+
+	outb(0xE9, input);
+	outb(0xE9, '\n');
+
 	for (;;)
 		asm volatile("hlt");
 }

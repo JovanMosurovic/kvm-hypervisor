@@ -4,6 +4,7 @@ extern "C" {
 #include "vm.h"
 }
 
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <linux/kvm.h>
@@ -103,17 +104,49 @@ int main(int argc, char *argv[])
         }
 
         switch (virtualMachine.run->exit_reason) {
-        case KVM_EXIT_IO:
-            if (virtualMachine.run->io.direction == KVM_EXIT_IO_OUT &&
-                virtualMachine.run->io.port == 0xE9) {
+        case KVM_EXIT_IO: {
+            if (virtualMachine.run->io.port != 0xE9 ||
+                virtualMachine.run->io.size != 1 ||
+                virtualMachine.run->io.count != 1) {
 
-                auto *data =
-                    reinterpret_cast<char *>(virtualMachine.run) +
-                    virtualMachine.run->io.data_offset;
+                std::cerr
+                    << "Unexpected I/O operation on port "
+                    << virtualMachine.run->io.port
+                    << ".\n";
 
-                std::cout << *data << std::flush;
+                vm_destroy(&virtualMachine);
+                return EXIT_FAILURE;
             }
-            break;
+
+            auto *data =
+                reinterpret_cast<std::uint8_t *>(virtualMachine.run) +
+                virtualMachine.run->io.data_offset;
+
+            if (virtualMachine.run->io.direction == KVM_EXIT_IO_OUT) {
+                std::cout
+                    << static_cast<char>(*data)
+                    << std::flush;
+
+                break;
+            }
+
+            if (virtualMachine.run->io.direction == KVM_EXIT_IO_IN) {
+                char input;
+
+                if (!std::cin.get(input)) {
+                    std::cerr << "Failed to read serial input.\n";
+                    vm_destroy(&virtualMachine);
+                    return EXIT_FAILURE;
+                }
+
+                *data = static_cast<std::uint8_t>(input);
+                break;
+            }
+
+            std::cerr << "Unexpected I/O direction.\n";
+            vm_destroy(&virtualMachine);
+            return EXIT_FAILURE;
+        }
 
         case KVM_EXIT_IRQ_WINDOW_OPEN:
             if (interruptCount > 0) {
