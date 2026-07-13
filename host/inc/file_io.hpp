@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -23,6 +24,7 @@ struct FileState {
     int nextDescriptor = 3;
 };
 
+bool isValidGuestFileName(std::string_view name);
 bool handleFileIo(GuestContext& context, struct vm& virtualMachine);
 void closeGuestFiles(GuestContext& context);
 

@@ -6,10 +6,12 @@
 #include <cstddef>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 
 struct SharedState {
     std::mutex consoleMutex;
     std::mutex serialInputMutex;
+    std::unordered_map<std::string, std::string> sharedFiles;
 };
 
 struct GuestContext {

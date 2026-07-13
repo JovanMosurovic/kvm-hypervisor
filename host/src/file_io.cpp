@@ -14,12 +14,18 @@
 #include <string_view>
 #include <system_error>
 #include <unistd.h>
+#include <vector>
 
 namespace {
 
     struct ResolvedFile {
         std::filesystem::path path;
         bool shared;
+    };
+
+    struct ReopenedFile {
+        OpenFile *file;
+        int hostDescriptor;
     };
 
     bool isLetter(char character)
@@ -32,20 +38,24 @@ namespace {
         return character >= '0' && character <= '9';
     }
 
-    bool isValidFileName(std::string_view name)
-    {
-        if (name.empty() || !isLetter(name.front())) {
+} // namespace
+
+bool isValidGuestFileName(std::string_view name)
+{
+    if (name.empty() || !isLetter(name.front())) {
+        return false;
+    }
+
+    for (char character : name) {
+        if (!isLetter(character) && !isDigit(character) && character != '.') {
             return false;
         }
-
-        for (char character : name) {
-            if (!isLetter(character) && !isDigit(character) && character != '.') {
-                return false;
-            }
-        }
-
-        return true;
     }
+
+    return true;
+}
+
+namespace {
 
     bool getGuestMemory(struct vm& virtualMachine, std::uint32_t address, std::size_t size, char *&memory)
     {
@@ -72,7 +82,7 @@ namespace {
         for (std::size_t length = 0; length <= FILE_NAME_MAX && length < available; ++length) {
             if (memory[length] == '\0') {
                 name.assign(memory, length);
-                return isValidFileName(name);
+                return isValidGuestFileName(name);
             }
         }
 
@@ -126,15 +136,107 @@ namespace {
 
     ResolvedFile resolveFile(const GuestContext& context, std::string_view name)
     {
-        return {
-            std::filesystem::path("vm_files") / ("vm_" + std::to_string(context.id)) / name,
-            false
-        };
+        const std::filesystem::path localPath =
+            std::filesystem::path("vm_files") / ("vm_" + std::to_string(context.id)) / name;
+
+        std::error_code error;
+
+        if (std::filesystem::exists(localPath, error) && !error) {
+            return {localPath, false};
+        }
+
+        const auto sharedFile = context.sharedState->sharedFiles.find(std::string(name));
+
+        if (sharedFile != context.sharedState->sharedFiles.end()) {
+            return {sharedFile->second, true};
+        }
+
+        return {localPath, false};
     }
 
-    bool prepareFileForWrite(const OpenFile& file)
+    void closeReopenedFiles(const std::vector<ReopenedFile>& reopenedFiles)
     {
-        return !file.shared;
+        for (const ReopenedFile& reopenedFile : reopenedFiles) {
+            ::close(reopenedFile.hostDescriptor);
+        }
+    }
+
+    bool reopenSharedFiles(GuestContext& context, std::string_view name, const std::filesystem::path& localPath)
+    {
+        std::vector<ReopenedFile> reopenedFiles;
+
+        for (auto& [descriptor, openFile] : context.fileState.openFiles) {
+            static_cast<void>(descriptor);
+
+            if (!openFile.shared || openFile.name != name) {
+                continue;
+            }
+
+            const off_t offset = ::lseek(openFile.hostDescriptor, 0, SEEK_CUR);
+
+            if (offset < 0) {
+                closeReopenedFiles(reopenedFiles);
+                return false;
+            }
+
+            const int hostDescriptor = ::open(localPath.c_str(), toHostOpenFlags(openFile.flags), 0644);
+
+            if (hostDescriptor < 0 || ::lseek(hostDescriptor, offset, SEEK_SET) < 0) {
+                if (hostDescriptor >= 0) {
+                    ::close(hostDescriptor);
+                }
+
+                closeReopenedFiles(reopenedFiles);
+                return false;
+            }
+
+            reopenedFiles.push_back({&openFile, hostDescriptor});
+        }
+
+        for (const ReopenedFile& reopenedFile : reopenedFiles) {
+            ::close(reopenedFile.file->hostDescriptor);
+            reopenedFile.file->hostDescriptor = reopenedFile.hostDescriptor;
+            reopenedFile.file->hostPath = localPath.string();
+            reopenedFile.file->shared = false;
+        }
+
+        return !reopenedFiles.empty();
+    }
+
+    bool prepareFileForWrite(GuestContext& context, OpenFile& file)
+    {
+        if (!file.shared) {
+            return true;
+        }
+
+        const std::filesystem::path localPath =
+            std::filesystem::path("vm_files") / ("vm_" + std::to_string(context.id)) / file.name;
+
+        std::error_code error;
+        std::filesystem::create_directories(localPath.parent_path(), error);
+
+        if (error) {
+            return false;
+        }
+
+        std::filesystem::copy_file(file.hostPath, localPath, error);
+
+        if (error) {
+            std::error_code removeError;
+            std::filesystem::remove(localPath, removeError);
+            return false;
+        }
+
+        std::filesystem::permissions(localPath, std::filesystem::perms::owner_write,
+                                     std::filesystem::perm_options::add, error);
+
+        if (error || !reopenSharedFiles(context, file.name, localPath)) {
+            std::error_code removeError;
+            std::filesystem::remove(localPath, removeError);
+            return false;
+        }
+
+        return true;
     }
 
     int openFile(GuestContext& context, struct vm& virtualMachine, const file_request& request)
@@ -151,7 +253,7 @@ namespace {
 
         const ResolvedFile resolvedFile = resolveFile(context, name);
 
-        if ((request.flags & FILE_OPEN_CREATE) != 0) {
+        if (!resolvedFile.shared && (request.flags & FILE_OPEN_CREATE) != 0) {
             std::error_code error;
             std::filesystem::create_directories(resolvedFile.path.parent_path(), error);
 
@@ -160,7 +262,8 @@ namespace {
             }
         }
 
-        const int hostDescriptor = ::open(resolvedFile.path.c_str(), toHostOpenFlags(request.flags), 0644);
+        const int hostFlags = resolvedFile.shared ? O_RDONLY : toHostOpenFlags(request.flags);
+        const int hostDescriptor = ::open(resolvedFile.path.c_str(), hostFlags, 0644);
 
         if (hostDescriptor < 0) {
             return -1;
@@ -221,7 +324,7 @@ namespace {
             return -1;
         }
 
-        if (!prepareFileForWrite(file->second)) {
+        if (!prepareFileForWrite(context, file->second)) {
             return -1;
         }
 

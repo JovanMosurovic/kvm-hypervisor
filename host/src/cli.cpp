@@ -14,12 +14,13 @@ namespace {
         output
             << "Usage:\n"
             << "  " << program
-            << " -m <2|4|8> -p <4|2> -g <guest-image> [guest-image ...]\n\n"
+            << " -m <2|4|8> -p <4|2> -g <guest-image> [guest-image ...] [-f <shared-file> ...]\n\n"
             << "Options:\n"
-            << "  -m, --memory <2|4|8>   Guest memory size in MiB\n"
-            << "  -p, --page <4|2>       Guest page size: 4 KiB or 2 MiB\n"
-            << "  -g, --guest <images...> Guest image paths\n"
-            << "  -h, --help             Show this help\n";
+            << "  -m, --memory <2|4|8>    Guest memory size in MiB\n"
+            << "  -p, --page <4|2>        Guest page size: 4 KiB or 2 MiB\n"
+            << "  -g, --guest <images...>  Guest image paths\n"
+            << "  -f, --file <files...>    Shared file paths\n"
+            << "  -h, --help              Show this help\n";
     }
 
     bool parseMemoryValue(std::string_view value, std::size_t& memorySize)
@@ -92,6 +93,17 @@ namespace {
             << "Example:\n"
             << "  " << program << " -m 4 -p 2 -g guest1.img guest2.img\n";
     }
+
+    void printFileError(std::string_view program, std::string_view message)
+    {
+        std::cerr
+            << "Error: " << message << "\n\n"
+            << "File option usage:\n"
+            << "  -f <shared-file> [shared-file ...]\n"
+            << "  --file <shared-file> [shared-file ...]\n\n"
+            << "Example:\n"
+            << "  " << program << " -m 4 -p 2 -g guest1.img guest2.img -f a.txt b.txt\n";
+    }
 } // namespace
 
 CliResult parseArguments(int argc, char *argv[])
@@ -101,6 +113,7 @@ CliResult parseArguments(int argc, char *argv[])
     bool memorySet = false;
     bool pageSet = false;
     bool guestSet = false;
+    bool fileSet = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string_view argument = argv[i];
@@ -175,6 +188,32 @@ CliResult parseArguments(int argc, char *argv[])
 
             if (result.config.guestImages.empty()) {
                 printGuestError(argv[0], "guest option requires at least one image");
+                return result;
+            }
+
+            continue;
+        }
+
+        if (argument == "-f" || argument == "--file") {
+            if (fileSet) {
+                printFileError(argv[0], "file option was specified more than once");
+                return result;
+            }
+
+            fileSet = true;
+
+            while (i + 1 < argc) {
+                const std::string_view value = argv[i + 1];
+
+                if (!value.empty() && value.front() == '-') {
+                    break;
+                }
+
+                result.config.sharedFiles.emplace_back(argv[++i]);
+            }
+
+            if (result.config.sharedFiles.empty()) {
+                printFileError(argv[0], "file option requires at least one path");
                 return result;
             }
 

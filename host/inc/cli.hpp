@@ -15,6 +15,7 @@ struct Config {
     std::size_t memorySize = 0;
     std::size_t pageSize = 0;
     std::vector<std::string> guestImages;
+    std::vector<std::string> sharedFiles;
 };
 
 struct CliResult {
