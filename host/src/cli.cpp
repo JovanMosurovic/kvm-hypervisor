@@ -14,10 +14,11 @@ namespace {
         output
             << "Usage:\n"
             << "  " << program
-            << " -m <2|4|8> -p <4|2> <guest-image>\n\n"
+            << " -m <2|4|8> -p <4|2> -g <guest-image> [guest-image ...]\n\n"
             << "Options:\n"
             << "  -m, --memory <2|4|8>   Guest memory size in MiB\n"
             << "  -p, --page <4|2>       Guest page size: 4 KiB or 2 MiB\n"
+            << "  -g, --guest <images...> Guest image paths\n"
             << "  -h, --help             Show this help\n";
     }
 
@@ -49,7 +50,7 @@ namespace {
             << "  -m <2|4|8>\n"
             << "  --memory <2|4|8>\n\n"
             << "Example:\n"
-            << "  " << program << " -m 4 -p 2 guest.img\n";
+            << "  " << program << " -m 4 -p 2 -g guest.img\n";
     }
 
     bool parsePageValue(std::string_view value, std::size_t& pageSize)
@@ -78,7 +79,18 @@ namespace {
             << "  4    Use 4 KiB pages\n"
             << "  2    Use 2 MiB pages\n\n"
             << "Example:\n"
-            << "  " << program << " -m 4 -p 2 guest.img\n";
+            << "  " << program << " -m 4 -p 2 -g guest.img\n";
+    }
+
+    void printGuestError(std::string_view program, std::string_view message)
+    {
+        std::cerr
+            << "Error: " << message << "\n\n"
+            << "Guest option usage:\n"
+            << "  -g <guest-image> [guest-image ...]\n"
+            << "  --guest <guest-image> [guest-image ...]\n\n"
+            << "Example:\n"
+            << "  " << program << " -m 4 -p 2 -g guest1.img guest2.img\n";
     }
 } // namespace
 
@@ -88,13 +100,13 @@ CliResult parseArguments(int argc, char *argv[])
 
     bool memorySet = false;
     bool pageSet = false;
+    bool guestSet = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string_view argument = argv[i];
 
         if (argument == "-h" || argument == "--help") {
             printGeneralUsage(std::cout, argv[0]);
-
             result.status = CliStatus::Help;
             return result;
         }
@@ -143,19 +155,41 @@ CliResult parseArguments(int argc, char *argv[])
             continue;
         }
 
+        if (argument == "-g" || argument == "--guest") {
+            if (guestSet) {
+                printGuestError(argv[0], "guest option was specified more than once");
+                return result;
+            }
+
+            guestSet = true;
+
+            while (i + 1 < argc) {
+                const std::string_view value = argv[i + 1];
+
+                if (!value.empty() && value.front() == '-') {
+                    break;
+                }
+
+                result.config.guestImages.emplace_back(argv[++i]);
+            }
+
+            if (result.config.guestImages.empty()) {
+                printGuestError(argv[0], "guest option requires at least one image");
+                return result;
+            }
+
+            continue;
+        }
+
         if (!argument.empty() && argument.front() == '-') {
             std::cerr << "Error: unknown option '" << argument << "'\n\n";
             printGeneralUsage(std::cerr, argv[0]);
             return result;
         }
 
-        if (!result.config.guestImage.empty()) {
-            std::cerr << "Error: more than one guest image was provided\n\n";
-            printGeneralUsage(std::cerr, argv[0]);
-            return result;
-        }
-
-        result.config.guestImage = argument;
+        std::cerr << "Error: unexpected argument '" << argument << "'\n\n";
+        printGeneralUsage(std::cerr, argv[0]);
+        return result;
     }
 
     if (!memorySet) {
@@ -168,9 +202,8 @@ CliResult parseArguments(int argc, char *argv[])
         return result;
     }
 
-    if (result.config.guestImage.empty()) {
-        std::cerr << "Error: guest image is required\n\n";
-        printGeneralUsage(std::cerr, argv[0]);
+    if (!guestSet) {
+        printGuestError(argv[0], "guest option is required");
         return result;
     }
 

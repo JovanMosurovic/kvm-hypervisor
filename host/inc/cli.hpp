@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 enum class CliStatus {
     Ok,
@@ -13,7 +14,7 @@ enum class CliStatus {
 struct Config {
     std::size_t memorySize = 0;
     std::size_t pageSize = 0;
-    std::string guestImage;
+    std::vector<std::string> guestImages;
 };
 
 struct CliResult {

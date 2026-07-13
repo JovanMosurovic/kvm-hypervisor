@@ -1,10 +1,12 @@
 #include "cli.hpp"
 #include "vm_runner.hpp"
 
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <pthread.h>
+#include <vector>
 
 int main(int argc, char *argv[])
 {
@@ -19,31 +21,48 @@ int main(int argc, char *argv[])
     }
 
     const Config& config = cli.config;
+    const std::size_t guestCount = config.guestImages.size();
 
     SharedState sharedState;
+    std::vector<GuestContext> guestContexts(guestCount);
+    std::vector<pthread_t> threads(guestCount);
 
-    GuestContext guestContext;
-    guestContext.id = 0;
-    guestContext.memorySize = config.memorySize;
-    guestContext.pageSize = config.pageSize;
-    guestContext.imagePath = config.guestImage;
-    guestContext.sharedState = &sharedState;
-
-    pthread_t thread;
-
-    const int createResult = pthread_create(&thread, nullptr, runGuest, &guestContext);
-
-    if (createResult != 0) {
-        std::cerr << "Failed to create VM thread: " << std::strerror(createResult) << '\n';
-        return EXIT_FAILURE;
+    for (std::size_t i = 0; i < guestCount; ++i) {
+        guestContexts[i].id = i;
+        guestContexts[i].memorySize = config.memorySize;
+        guestContexts[i].pageSize = config.pageSize;
+        guestContexts[i].imagePath = config.guestImages[i];
+        guestContexts[i].sharedState = &sharedState;
     }
 
-    const int joinResult = pthread_join(thread, nullptr);
+    std::size_t startedThreads = 0;
+    bool allGuestsSucceeded = true;
 
-    if (joinResult != 0) {
-        std::cerr << "Failed to join VM thread: " << std::strerror(joinResult) << '\n';
-        return EXIT_FAILURE;
+    for (std::size_t i = 0; i < guestCount; ++i) {
+        const int result = pthread_create(&threads[i], nullptr, runGuest, &guestContexts[i]);
+
+        if (result != 0) {
+            std::cerr << "Failed to create VM thread: " << std::strerror(result) << '\n';
+            allGuestsSucceeded = false;
+            break;
+        }
+
+        ++startedThreads;
     }
 
-    return guestContext.completedSuccessfully ? EXIT_SUCCESS : EXIT_FAILURE;
+    for (std::size_t i = 0; i < startedThreads; ++i) {
+        const int result = pthread_join(threads[i], nullptr);
+
+        if (result != 0) {
+            std::cerr << "Failed to join VM thread: " << std::strerror(result) << '\n';
+            allGuestsSucceeded = false;
+            continue;
+        }
+
+        if (!guestContexts[i].completedSuccessfully) {
+            allGuestsSucceeded = false;
+        }
+    }
+
+    return allGuestsSucceeded ? EXIT_SUCCESS : EXIT_FAILURE;
 }
