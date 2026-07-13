@@ -1,4 +1,5 @@
 CC = gcc
+CPPFLAGS = -Iinc -I../common
 
 BUILD_DIR ?= build
 
@@ -16,7 +17,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
-	$(CC) -m64 -ffreestanding -fno-pic -Iinc -MMD -MP -c -o $@ $<
+	$(CC) $(CPPFLAGS) -m64 -ffreestanding -fno-pic -MMD -MP -c -o $@ $<
 
 $(IMG): $(OBJS) guest.ld
 	ld -T guest.ld $(OBJS) -o $@

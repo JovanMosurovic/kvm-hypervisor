@@ -1,6 +1,8 @@
 #ifndef KVM_HYPERVISOR_VM_RUNNER_HPP
 #define KVM_HYPERVISOR_VM_RUNNER_HPP
 
+#include "file_io.hpp"
+
 #include <cstddef>
 #include <mutex>
 #include <string>
@@ -16,6 +18,7 @@ struct GuestContext {
     std::size_t pageSize = 0;
     std::string imagePath;
     std::string serialOutputBuffer;
+    FileState fileState;
     SharedState *sharedState = nullptr;
     bool completedSuccessfully = false;
 };

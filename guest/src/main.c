@@ -1,8 +1,15 @@
 #include "descriptors.h"
+#include "file.h"
 #include "interrupts.h"
 #include "io.h"
 
 static struct gdt_entry gdt[3];
+
+static void serial_write(const char *message)
+{
+	for (; *message; ++message)
+		outb(0xE9, *message);
+}
 
 void
 __attribute__((noreturn))
@@ -50,20 +57,42 @@ _start(void)
 
 	asm volatile("sti");
 
-	const char *s;
-	for (s = "Hello, world!\n"; *s; ++s)
-		outb(0xE9, *s);
-
-	for (s = "Enter one character: "; *s; ++s)
-		outb(0xE9, *s);
+	serial_write("Hello, world!\n");
+	serial_write("Enter one character: ");
 
 	uint8_t input = inb(0xE9);
 
-	for (s = "Guest received: "; *s; ++s)
-		outb(0xE9, *s);
+	serial_write("Guest received: ");
 
 	outb(0xE9, input);
 	outb(0xE9, '\n');
+
+	const char message[] = "File I/O works!";
+	char buffer[sizeof(message)] = { 0 };
+	int fd = open("guest.txt", O_RDWR | O_CREATE);
+	int bytes_written = -1;
+	int seek_result = -1;
+	int bytes_read = -1;
+
+	if (fd >= 0)
+		bytes_written = write(fd, message, sizeof(message) - 1);
+
+	if (bytes_written == sizeof(message) - 1)
+		seek_result = lseek(fd, 0, SEEK_SET);
+
+	if (seek_result == 0)
+		bytes_read = read(fd, buffer, sizeof(buffer) - 1);
+
+	int close_result = fd >= 0 ? close(fd) : -1;
+
+	if (bytes_written != sizeof(message) - 1 || seek_result != 0 ||
+	    bytes_read != sizeof(message) - 1 || close_result < 0) {
+		serial_write("File I/O failed!\n");
+	} else {
+		serial_write("File content: ");
+		serial_write(buffer);
+		outb(0xE9, '\n');
+	}
 
 	for (;;)
 		asm volatile("hlt");

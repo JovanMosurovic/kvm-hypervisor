@@ -1,6 +1,6 @@
 CC       = gcc
 CXX      = g++
-CPPFLAGS = -Iinc
+CPPFLAGS = -Iinc -I../common
 CFLAGS   = -Wall -Wextra
 CXXFLAGS = -std=c++17 -Wall -Wextra
 LDLIBS   = -pthread

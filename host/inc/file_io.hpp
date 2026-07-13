@@ -1,0 +1,29 @@
+#ifndef KVM_HYPERVISOR_FILE_IO_HPP
+#define KVM_HYPERVISOR_FILE_IO_HPP
+
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+struct GuestContext;
+struct vm;
+
+struct OpenFile {
+    int hostDescriptor = -1;
+    int flags = 0;
+    std::string name;
+    std::string hostPath;
+    bool shared = false;
+};
+
+struct FileState {
+    std::unordered_map<int, OpenFile> openFiles;
+    std::vector<std::int32_t> pendingResults;
+    int nextDescriptor = 3;
+};
+
+bool handleFileIo(GuestContext& context, struct vm& virtualMachine);
+void closeGuestFiles(GuestContext& context);
+
+#endif // KVM_HYPERVISOR_FILE_IO_HPP

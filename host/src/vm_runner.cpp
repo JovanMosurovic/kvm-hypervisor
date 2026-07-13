@@ -1,5 +1,8 @@
 #include "vm_runner.hpp"
 
+#include "file_io.hpp"
+#include "file_protocol.h"
+
 extern "C" {
 #include "vm.h"
 }
@@ -216,12 +219,18 @@ namespace {
             }
 
             switch (virtualMachine.run->exit_reason) {
-            case KVM_EXIT_IO:
-                if (!handleSerialIo(context, virtualMachine)) {
+            case KVM_EXIT_IO: {
+                const std::uint16_t port = virtualMachine.run->io.port;
+                const bool handled = port == FILE_IO_PORT
+                    ? handleFileIo(context, virtualMachine)
+                    : handleSerialIo(context, virtualMachine);
+
+                if (!handled) {
                     vm_destroy(&virtualMachine);
                     return false;
                 }
                 break;
+            }
 
             case KVM_EXIT_IRQ_WINDOW_OPEN:
                 if (interruptCount > 0) {
@@ -274,6 +283,7 @@ void *runGuest(void *argument)
     }
 
     context->completedSuccessfully = runVirtualMachine(*context);
+    closeGuestFiles(*context);
 
     return nullptr;
 }
