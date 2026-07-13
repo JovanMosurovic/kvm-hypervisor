@@ -1,0 +1,4 @@
+If:
+  PathMatch: guest/.*
+CompileFlags:
+  Add: [--target=x86_64-unknown-linux-gnu, -m64]
