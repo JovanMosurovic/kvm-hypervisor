@@ -55,6 +55,24 @@ namespace {
             << "KVM_EXIT_HLT\n";
     }
 
+    void flushSerialOutput(GuestContext& context, bool finishLine)
+    {
+        if (context.serialOutputBuffer.empty()) {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(context.sharedState->consoleMutex);
+
+        std::cout << "[VM " << context.id << "] " << context.serialOutputBuffer;
+
+        if (finishLine && context.serialOutputBuffer.back() != '\n') {
+            std::cout << '\n';
+        }
+
+        std::cout << std::flush;
+        context.serialOutputBuffer.clear();
+    }
+
     bool handleSerialIo(GuestContext& context, struct vm& virtualMachine)
     {
         const auto& io = virtualMachine.run->io;
@@ -88,15 +106,21 @@ namespace {
         auto *data = reinterpret_cast<std::uint8_t *>(virtualMachine.run) + dataOffset;
 
         if (io.direction == KVM_EXIT_IO_OUT) {
-            std::lock_guard<std::mutex> lock(context.sharedState->consoleMutex);
+            const char output = static_cast<char>(*data);
 
-            std::cout << static_cast<char>(*data) << std::flush;
+            context.serialOutputBuffer.push_back(output);
+
+            if (output == '\n') {
+                flushSerialOutput(context, false);
+            }
 
             return true;
         }
 
         if (io.direction == KVM_EXIT_IO_IN) {
             char input;
+
+            flushSerialOutput(context, true);
 
             std::lock_guard<std::mutex> lock(context.sharedState->serialInputMutex);
 
@@ -217,17 +241,20 @@ namespace {
                 break;
 
             case KVM_EXIT_HLT:
+                flushSerialOutput(context, true);
                 printHalt(context);
                 vm_destroy(&virtualMachine);
                 return true;
 
             case KVM_EXIT_SHUTDOWN:
+                flushSerialOutput(context, true);
                 printUnexpectedExit(context, virtualMachine.run->exit_reason);
 
                 vm_destroy(&virtualMachine);
                 return false;
 
             default:
+                flushSerialOutput(context, true);
                 printUnexpectedExit(context, virtualMachine.run->exit_reason);
 
                 vm_destroy(&virtualMachine);

@@ -59,7 +59,7 @@ _start(void)
 
 	uint8_t input = inb(0xE9);
 
-	for (s = "\nGuest received: "; *s; ++s)
+	for (s = "Guest received: "; *s; ++s)
 		outb(0xE9, *s);
 
 	outb(0xE9, input);

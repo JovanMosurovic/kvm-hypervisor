@@ -15,6 +15,7 @@ struct GuestContext {
     std::size_t memorySize = 0;
     std::size_t pageSize = 0;
     std::string imagePath;
+    std::string serialOutputBuffer;
     SharedState *sharedState = nullptr;
     bool completedSuccessfully = false;
 };
