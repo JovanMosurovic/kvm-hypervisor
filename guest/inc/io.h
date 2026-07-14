@@ -31,6 +31,7 @@ static inline uint8_t inb(uint16_t port)
 	return value;
 }
 
+// File system 4
 static inline void outl(uint16_t port, uint32_t value)
 {
 	asm volatile(

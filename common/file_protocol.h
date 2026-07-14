@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+// File system 1
 /* The guest sends the address of this request through port 0x278 and reads the result back. */
 #define FILE_IO_PORT 0x0278u
 #define FILE_NAME_MAX 255u

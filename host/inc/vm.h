@@ -16,6 +16,7 @@
 #define PAGE_SIZE_2M (2u * 1024u * 1024u)
 #define PAGE_TABLE_ENTRIES 512u
 
+// Interrupt 1
 #define IRQ_NUM   32 /* Entries 0-31 are reserved for CPU exceptions */
 #define IRQ_COUNT 2 /* One interrupt assigns the mode and one transfers data */
 

@@ -10,6 +10,7 @@
 struct GuestContext;
 struct vm;
 
+// File system 5
 /* Maps a guest descriptor to the real host file opened for that guest. */
 struct OpenFile {
     int hostDescriptor = -1;

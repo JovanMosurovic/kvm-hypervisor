@@ -85,6 +85,7 @@ _start(void)
 		::: "eax", "memory"
 	);
 
+	// Interrupt 5
 	init_idt();
 	test_file_io();
 

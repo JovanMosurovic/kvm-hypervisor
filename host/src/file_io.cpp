@@ -394,6 +394,7 @@ namespace {
 
 } // namespace
 
+// File system 7
 bool handleFileIo(GuestContext& context, struct vm& virtualMachine)
 {
     const auto& io = virtualMachine.run->io;

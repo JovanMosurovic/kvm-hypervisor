@@ -15,6 +15,7 @@
 
 namespace {
 
+    // File system 8
     bool configureSharedFiles(const Config& config, SharedState& sharedState)
     {
         for (const std::string& configuredPath : config.sharedFiles) {
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
         guestContexts[i].memorySize = config.memorySize;
         guestContexts[i].pageSize = config.pageSize;
         guestContexts[i].imagePath = config.guestImages[i];
+        // Interrupt 2
         guestContexts[i].sharedBuffer.mode = i == 0 ? VM_MODE_WRITER : VM_MODE_READER;
         guestContexts[i].sharedState = &sharedState; // Every VM gets separate GuestContext, but all of them point to the same sharedState
     }

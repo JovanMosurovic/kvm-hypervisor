@@ -5,6 +5,7 @@
 
 #define IDT_ENTRIES 64
 
+// Interrupt 3
 /* Values saved by the CPU before it enters the interrupt handler. */
 struct interrupt_frame {
 	uint64_t rip;

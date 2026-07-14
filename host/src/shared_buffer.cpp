@@ -210,6 +210,7 @@ namespace {
 
 } // namespace
 
+// Interrupt 10
 bool handleSharedBufferIo(GuestContext& context, struct vm& virtualMachine)
 {
     const auto& io = virtualMachine.run->io;

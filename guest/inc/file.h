@@ -3,6 +3,7 @@
 
 #include "file_protocol.h"
 
+// File system 2
 #define O_RD FILE_OPEN_READ
 #define O_WR FILE_OPEN_WRITE
 #define O_RDWR FILE_OPEN_READ_WRITE

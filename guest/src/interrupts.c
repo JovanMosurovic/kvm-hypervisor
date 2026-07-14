@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+// Interrupt 4
 static struct idt_entry idt[IDT_ENTRIES];
 static volatile uint8_t transfer_finished;
 static volatile uint8_t transfer_succeeded;
@@ -66,6 +67,7 @@ irq0_handler(struct interrupt_frame *frame)
 {
 	(void)frame;
 
+	// Interrupt 8
 	/* The first interrupt stores the mode; the next one performs the transfer. */
 	if (!mode_initialized) {
 		vm_mode = inb(SHARED_BUFFER_PORT);
@@ -79,6 +81,7 @@ irq0_handler(struct interrupt_frame *frame)
 		return;
 	}
 
+	// Interrupt 9
 	transfer_succeeded = vm_mode == VM_MODE_WRITER
 		? write_shared_buffer()
 		: read_shared_buffer();

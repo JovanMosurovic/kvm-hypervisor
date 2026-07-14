@@ -203,6 +203,7 @@ namespace {
             return false;
         }
 
+        // Interrupt 6
         /* Ask KVM to return when the guest is ready to accept an interrupt. */
         virtualMachine.run->request_interrupt_window = interruptCount > 0;
 
@@ -229,6 +230,7 @@ namespace {
                 const std::uint16_t port = virtualMachine.run->io.port;
                 bool handled;
 
+                // File system 6
                 if (port == FILE_IO_PORT) {
                     handled = handleFileIo(context, virtualMachine);
                 } else if (port == SHARED_BUFFER_PORT || port == SHARED_BUFFER_STATUS_PORT) {

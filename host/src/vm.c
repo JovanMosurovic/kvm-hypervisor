@@ -240,6 +240,7 @@ int load_guest_image(struct vm *v, const char *image_path, uint64_t load_addr)
 	return 0;
 }
 
+// Interrupt 7
 int inject_irq(struct vm *v, unsigned int vector)
 {
 	/* KVM delivers this vector after the guest opens its interrupt window. */
