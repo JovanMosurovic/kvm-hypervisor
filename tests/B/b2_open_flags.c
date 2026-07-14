@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#include "file.h"
+#include "io.h"
+
 /*
 	B2:
 	1) otvaranje nepostojeceg fajla BEZ O_CREATE mora da vrati -1
@@ -7,22 +10,6 @@
 	2) O_RDWR: kreirati fajl, upisati, premotati na pocetak (lseek SEEK_SET)
 	   i procitati u ISTOJ sesiji (bez close/open), pa uporediti sa upisanim.
 */
-
-#define O_RD     1
-#define O_RDWR   4
-#define O_CREATE 8
-#define SEEK_SET 1
-
-extern int open(const char *path, int flags);
-extern int close(int fd);
-extern int read(int fd, char *buf, int count);
-extern int write(int fd, const char *buf, int count);
-extern int lseek(int fd, const int offset, int off_flag);
-
-static void outb(uint16_t port, uint8_t value)
-{
-	asm("outb %0,%1" : /* empty */ : "a" (value), "Nd" (port) : "memory");
-}
 
 static void serial_putc(char c)
 {

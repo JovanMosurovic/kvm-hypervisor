@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#include "file.h"
+#include "io.h"
+
 /*
 	B3 (writer): otvara DELJENI fajl (prosledjen preko -f/--file hipervizoru)
 	i upisuje u njega. 
@@ -10,18 +13,6 @@
 	Nakon izvrsavanja, shared.txt na disku domacina mora i dalje da sadrzi
 	"ORIGINAL" (proveriti sa cat shared.txt).
 */
-
-#define O_WR 2
-
-extern int open(const char *path, int flags);
-extern int close(int fd);
-extern int write(int fd, const char *buf, int count);
-
-
-static void outb(uint16_t port, uint8_t value)
-{
-	asm("outb %0,%1" : /* empty */ : "a" (value), "Nd" (port) : "memory");
-}
 
 static void serial_putc(char c)
 {

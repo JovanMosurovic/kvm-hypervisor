@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "io.h"
+
 #define ECHO_COUNT 5
 
 /*
@@ -8,11 +10,6 @@
 
 	Pokrenuti npr.: printf 'ABCDE' | ./hypervisor -m 2 -p 4 -g a2_echo.img
 */
-
-static void outb(uint16_t port, uint8_t value)
-{
-	asm("outb %0,%1" : /* empty */ : "a" (value), "Nd" (port) : "memory");
-}
 
 static void serial_putc(char c)
 {
@@ -25,11 +22,10 @@ static void serial_puts(const char *s)
 		serial_putc(*s);
 }
 
-static inline uint8_t inb(uint16_t port)
+static __attribute__((noreturn)) void halt_forever(void)
 {
-	uint8_t value;
-	asm volatile("inb %1,%0" : "=a"(value) : "Nd"(port) : "memory");
-	return value;
+	for (;;)
+		asm volatile("hlt");
 }
 
 void

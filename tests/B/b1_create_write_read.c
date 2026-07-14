@@ -1,18 +1,12 @@
 #include <stdint.h>
 
+#include "file.h"
+#include "io.h"
+
 /*
 	B1: kreira fajl, upisuje u njega, zatvara ga, ponovo ga otvara za citanje
 	i ispisuje procitani sadrzaj na serijski izlaz (0xE9).
 */
-
-#define O_RD     1
-#define O_WR     2
-#define O_CREATE 8
-
-static void outb(uint16_t port, uint8_t value)
-{
-	asm("outb %0,%1" : /* empty */ : "a" (value), "Nd" (port) : "memory");
-}
 
 static void serial_putc(char c)
 {
@@ -48,11 +42,6 @@ static __attribute__((noreturn)) void halt_forever(void)
 	for (;;)
 		asm volatile("hlt");
 }
-
-extern int open(const char *path, int flags);
-extern int close(int fd);
-extern int read(int fd, char *buf, int count);
-extern int write(int fd, const char *buf, int count);
 
 void
 __attribute__((noreturn))

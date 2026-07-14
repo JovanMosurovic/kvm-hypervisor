@@ -1,14 +1,11 @@
 #include <stdint.h>
 
+#include "io.h"
+
 /*
 	A1: 
 	Proverava: serijski izlaz na port 0xE9 i uredno gašenje VM-a instrukcijom hlt.
 */
-
-static void outb(uint16_t port, uint8_t value)
-{
-	asm("outb %0,%1" : /* empty */ : "a" (value), "Nd" (port) : "memory");
-}
 
 static void serial_putc(char c)
 {
