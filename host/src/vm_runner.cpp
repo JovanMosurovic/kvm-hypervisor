@@ -145,6 +145,7 @@ namespace {
     bool runVirtualMachine(GuestContext& context)
     {
         struct vm virtualMachine;
+        /* sregs holds control and segment registers; regs holds regular CPU registers. */
         struct kvm_sregs specialRegisters{};
         struct kvm_regs registers{};
 
@@ -188,9 +189,9 @@ namespace {
             return false;
         }
 
-        registers.rflags = 0x2;
-        registers.rip = GUEST_START_ADDR;
-        registers.rsp = virtualMachine.mem_size;
+        registers.rflags = 0x2;                  /* Reserved bit 1 must be set */
+        registers.rip = GUEST_START_ADDR;        /* First guest instruction */
+        registers.rsp = virtualMachine.mem_size; /* Stack starts at the top of guest RAM */
 
         if (ioctl(virtualMachine.vcpu_fd, KVM_SET_REGS, &registers) < 0) {
 
@@ -202,9 +203,11 @@ namespace {
             return false;
         }
 
+        /* Ask KVM to return when the guest is ready to accept an interrupt. */
         virtualMachine.run->request_interrupt_window = interruptCount > 0;
 
         while (true) {
+            /* Guest execution continues until KVM needs the host to handle an event. */
             const int result = ioctl(virtualMachine.vcpu_fd, KVM_RUN, 0);
 
             if (result < 0) {
@@ -220,6 +223,7 @@ namespace {
                 return false;
             }
 
+            // Recognize port
             switch (virtualMachine.run->exit_reason) {
             case KVM_EXIT_IO: {
                 const std::uint16_t port = virtualMachine.run->io.port;

@@ -10,6 +10,7 @@
 struct GuestContext;
 struct vm;
 
+/* Maps a guest descriptor to the real host file opened for that guest. */
 struct OpenFile {
     int hostDescriptor = -1;
     int flags = 0;
@@ -19,6 +20,7 @@ struct OpenFile {
 };
 
 struct FileState {
+    /* Each VM owns a separate descriptor table. */
     std::unordered_map<int, OpenFile> openFiles;
     std::vector<std::int32_t> pendingResults;
     int nextDescriptor = 3;

@@ -19,6 +19,7 @@ int vm_init(struct vm *v, size_t mem_size)
 	v->run_mmap_size = 0;
 	v->mem_size = mem_size;
 
+	/* /dev/kvm is the entry point to the kernel virtualization interface. */
 	v->kvm_fd = open("/dev/kvm", O_RDWR);
 	if (v->kvm_fd < 0) {
 		perror("open /dev/kvm");
@@ -44,6 +45,7 @@ int vm_init(struct vm *v, size_t mem_size)
 		return -1;
 	}
 
+	/* Register the allocated host memory as guest physical memory starting at address 0. */
 	region.slot = 0;
 	region.flags = 0;
 	region.guest_phys_addr = 0;
@@ -106,6 +108,7 @@ void vm_destroy(struct vm *v)
 
 static void setup_segments_64(struct kvm_sregs *sregs)
 {
+	/* Long mode still requires valid code and data segment descriptors. */
 	struct kvm_segment code = {
 		.base    = 0,
 		.limit   = 0xffffffff,
@@ -127,6 +130,7 @@ static void setup_segments_64(struct kvm_sregs *sregs)
 
 static void setup_page_tables_4k(struct vm *v, uint64_t *pd)
 {
+	/* Each page-directory entry points to a table of 512 identity-mapped 4 KiB pages. */
 	const size_t page_table_count =
 		v->mem_size / PAGE_SIZE_2M;
 
@@ -152,6 +156,7 @@ static void setup_page_tables_4k(struct vm *v, uint64_t *pd)
 
 static void setup_page_tables_2m(struct vm *v, uint64_t *pd)
 {
+	/* The PS bit makes each page-directory entry map one 2 MiB page directly. */
 	const size_t page_count =
 		v->mem_size / PAGE_SIZE_2M;
 
@@ -170,6 +175,7 @@ static void setup_page_tables_2m(struct vm *v, uint64_t *pd)
 
 void setup_long_mode(struct vm *v, struct kvm_sregs *sregs, size_t page_size)
 {
+	/* PML4 0x1000 -> PDPT 0x2000 -> PD 0x3000 -> optional 4 KiB tables from 0x4000. */
 	const uint64_t pml4_addr = 0x1000;
 	uint64_t *pml4 = (void *)(v->mem + pml4_addr);
 
@@ -188,10 +194,10 @@ void setup_long_mode(struct vm *v, struct kvm_sregs *sregs, size_t page_size)
 		setup_page_tables_2m(v, pd);
 	}
 
-	sregs->cr3  = pml4_addr;
-	sregs->cr4  = CR4_PAE;
-	sregs->cr0  = CR0_PE | CR0_PG;
-	sregs->efer = EFER_LME | EFER_LMA;
+	sregs->cr3  = pml4_addr;           /* Root of the page-table hierarchy */
+	sregs->cr4  = CR4_PAE;             /* Page-table format required by long mode */
+	sregs->cr0  = CR0_PE | CR0_PG;     /* Protected mode and paging */
+	sregs->efer = EFER_LME | EFER_LMA; /* Long mode enabled and active */
 
 	setup_segments_64(sregs);
 }
@@ -236,6 +242,7 @@ int load_guest_image(struct vm *v, const char *image_path, uint64_t load_addr)
 
 int inject_irq(struct vm *v, unsigned int vector)
 {
+	/* KVM delivers this vector after the guest opens its interrupt window. */
 	struct kvm_interrupt irq = { .irq = vector };
 
 	if (ioctl(v->vcpu_fd, KVM_INTERRUPT, &irq) < 0) {

@@ -104,6 +104,7 @@ namespace {
             return false;
         }
 
+        /* Consume every byte sent by the guest, but store only what fits in the buffer. */
         if (state.receivedBytes < BUFFER_SIZE) {
             state.data[state.receivedBytes] = value;
         }
@@ -127,6 +128,7 @@ namespace {
             return false;
         }
 
+        /* Do not return the final count until all readers acknowledge the data. */
         state.condition.wait(lock, [&state, generation] {
             return state.stopped ||
                 (state.dataReady && state.generation == generation &&
