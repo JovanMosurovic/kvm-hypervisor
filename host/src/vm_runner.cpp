@@ -2,6 +2,8 @@
 
 #include "file_io.hpp"
 #include "file_protocol.h"
+#include "shared_buffer.hpp"
+#include "shared_buffer_protocol.h"
 
 extern "C" {
 #include "vm.h"
@@ -221,11 +223,19 @@ namespace {
             switch (virtualMachine.run->exit_reason) {
             case KVM_EXIT_IO: {
                 const std::uint16_t port = virtualMachine.run->io.port;
-                const bool handled = port == FILE_IO_PORT
-                    ? handleFileIo(context, virtualMachine)
-                    : handleSerialIo(context, virtualMachine);
+                bool handled;
+
+                if (port == FILE_IO_PORT) {
+                    handled = handleFileIo(context, virtualMachine);
+                } else if (port == SHARED_BUFFER_PORT || port == SHARED_BUFFER_STATUS_PORT) {
+                    handled = handleSharedBufferIo(context, virtualMachine);
+                } else {
+                    handled = handleSerialIo(context, virtualMachine);
+                }
 
                 if (!handled) {
+                    flushSerialOutput(context, true);
+                    printError(context, "Failed to handle an I/O exit");
                     vm_destroy(&virtualMachine);
                     return false;
                 }
@@ -251,6 +261,13 @@ namespace {
 
             case KVM_EXIT_HLT:
                 flushSerialOutput(context, true);
+
+                if (!context.sharedBuffer.transferCompleted) {
+                    printError(context, "VM halted before completing the shared buffer transfer");
+                    vm_destroy(&virtualMachine);
+                    return false;
+                }
+
                 printHalt(context);
                 vm_destroy(&virtualMachine);
                 return true;
@@ -283,6 +300,11 @@ void *runGuest(void *argument)
     }
 
     context->completedSuccessfully = runVirtualMachine(*context);
+
+    if (!context->completedSuccessfully) {
+        abortSharedBuffer(context->sharedState->sharedBuffer);
+    }
+
     closeGuestFiles(*context);
 
     return nullptr;

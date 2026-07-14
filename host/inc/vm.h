@@ -11,7 +11,7 @@
 #define PAGE_TABLE_ENTRIES 512u
 
 #define IRQ_NUM   32
-#define IRQ_COUNT 3
+#define IRQ_COUNT 2 /* One interrupt assigns the mode and one transfers data */
 
 /* Page table entry flags */
 #define PDE64_PRESENT (1u << 0) /* The mapped page or next-level table is present */

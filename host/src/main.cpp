@@ -1,5 +1,6 @@
 #include "cli.hpp"
 #include "file_io.hpp"
+#include "shared_buffer.hpp"
 #include "vm_runner.hpp"
 
 #include <cstddef>
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
     const std::size_t guestCount = config.guestImages.size();
 
     SharedState sharedState;
+    sharedState.sharedBuffer.readerCount = guestCount - 1;
 
     if (!configureSharedFiles(config, sharedState)) {
         return EXIT_FAILURE;
@@ -72,6 +74,7 @@ int main(int argc, char *argv[])
         guestContexts[i].memorySize = config.memorySize;
         guestContexts[i].pageSize = config.pageSize;
         guestContexts[i].imagePath = config.guestImages[i];
+        guestContexts[i].sharedBuffer.mode = i == 0 ? VM_MODE_WRITER : VM_MODE_READER;
         guestContexts[i].sharedState = &sharedState; // Every VM gets separate GuestContext, but all of them point to the same sharedState
     }
 
@@ -84,6 +87,7 @@ int main(int argc, char *argv[])
         if (result != 0) {
             std::cerr << "Failed to create VM thread: " << std::strerror(result) << '\n';
             allGuestsSucceeded = false;
+            abortSharedBuffer(sharedState.sharedBuffer);
             break;
         }
 
@@ -96,6 +100,7 @@ int main(int argc, char *argv[])
         if (result != 0) {
             std::cerr << "Failed to join VM thread: " << std::strerror(result) << '\n';
             allGuestsSucceeded = false;
+            abortSharedBuffer(sharedState.sharedBuffer);
             continue;
         }
 

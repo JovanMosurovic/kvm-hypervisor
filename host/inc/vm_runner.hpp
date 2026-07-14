@@ -2,6 +2,7 @@
 #define KVM_HYPERVISOR_VM_RUNNER_HPP
 
 #include "file_io.hpp"
+#include "shared_buffer.hpp"
 
 #include <cstddef>
 #include <mutex>
@@ -13,6 +14,7 @@ struct SharedState {
     std::mutex consoleMutex;
     std::mutex serialInputMutex;
     std::unordered_map<std::string, std::string> sharedFiles;
+    SharedBufferState sharedBuffer;
 };
 
 struct GuestContext {
@@ -22,6 +24,7 @@ struct GuestContext {
     std::string imagePath;
     std::string serialOutputBuffer;
     FileState fileState;
+    SharedBufferVmState sharedBuffer;
     SharedState *sharedState = nullptr;
     bool completedSuccessfully = false;
 };
