@@ -5,6 +5,7 @@
 
 #define IDT_ENTRIES 64
 
+/* Values saved by the CPU before it enters the interrupt handler. */
 struct interrupt_frame {
 	uint64_t rip;
 	uint64_t cs;
@@ -14,6 +15,7 @@ struct interrupt_frame {
 };
 
 struct idt_entry {
+	/* A 64-bit handler address is split between offset_low, offset_mid and offset_high. */
 	uint16_t offset_low;
 	uint16_t selector;
 	uint8_t  ist;

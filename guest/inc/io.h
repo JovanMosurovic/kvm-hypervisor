@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+/*
+ * IN and OUT transfer data through AL/EAX. Constraint "a" selects that register,
+ * while "Nd" uses an immediate port number when possible and DX otherwise.
+ */
 static inline void outb(uint16_t port, uint8_t value)
 {
 	asm volatile(

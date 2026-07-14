@@ -66,6 +66,7 @@ irq0_handler(struct interrupt_frame *frame)
 {
 	(void)frame;
 
+	/* The first interrupt stores the mode; the next one performs the transfer. */
 	if (!mode_initialized) {
 		vm_mode = inb(SHARED_BUFFER_PORT);
 		mode_initialized = 1;
@@ -86,11 +87,12 @@ irq0_handler(struct interrupt_frame *frame)
 
 static void set_idt_gate(unsigned n, void (*handler)(struct interrupt_frame *))
 {
+	/* Store the handler's 64-bit address in the three offset fields of the IDT entry. */
 	uint64_t addr = (uint64_t)(uintptr_t)handler;
 	idt[n].offset_low  = addr & 0xFFFF;
 	idt[n].selector    = 0x08;  /* 64-bit code segment */
 	idt[n].ist         = 0;
-	idt[n].type_attr   = 0x8E;  /* P=1, DPL=0, 64-bit interrupt gate */
+	idt[n].type_attr   = 0x8E;  /* Present, ring 0, 64-bit interrupt gate */
 	idt[n].offset_mid  = (addr >> 16) & 0xFFFF;
 	idt[n].offset_high = (addr >> 32) & 0xFFFFFFFF;
 	idt[n].reserved    = 0;

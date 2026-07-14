@@ -49,13 +49,14 @@ _start(void)
 {
 	struct dt_ptr p;
 
+	/* Selectors are GDT offsets: 0x08 selects the code entry and 0x10 the data entry. */
 	gdt[0] = (struct gdt_entry){ 0 };
-	gdt[1] = (struct gdt_entry){  /* 64-bit code, selector 0x08: P=1, DPL=0, S=1, type=0xA, L=1, G=1 */
+	gdt[1] = (struct gdt_entry){  /* 0x9A: ring-0 code, 0xAF: long mode and page granularity */
 		.limit_low   = 0xFFFF,
 		.access      = 0x9A,
 		.flags_limit = 0xAF,
 	};
-	gdt[2] = (struct gdt_entry){  /* 64-bit data, selector 0x10: P=1, DPL=0, S=1, type=0x2, D/B=1, G=1 */
+	gdt[2] = (struct gdt_entry){  /* 0x92: ring-0 data, 0xCF: 32-bit segment and page granularity */
 		.limit_low   = 0xFFFF,
 		.access      = 0x92,
 		.flags_limit = 0xCF,
@@ -65,7 +66,7 @@ _start(void)
 	p.base  = (uint64_t)(uintptr_t)gdt;
 	asm volatile("lgdt %0" : : "m"(p) : "memory");
 
-	/* Reload CS to 0x08 and continue at label 1 */
+	/* CS cannot be written directly, so a far return reloads it with selector 0x08. */
 	asm volatile(
 		"pushq $0x08\n\t"
 		"lea 1f(%%rip), %%rax\n\t"
@@ -75,7 +76,7 @@ _start(void)
 		::: "rax", "memory"
 	);
 
-	/* Reload data segment selectors to 0x10 */
+	/* Data segment registers can be reloaded directly with selector 0x10. */
 	asm volatile(
 		"movl $0x10, %%eax\n\t"
 		"movw %%ax, %%ds\n\t"

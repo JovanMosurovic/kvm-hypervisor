@@ -61,6 +61,7 @@ namespace {
     {
         const std::size_t guestAddress = address;
 
+        /* Validate the guest address before converting it to a host pointer. */
         if (guestAddress > virtualMachine.mem_size || size > virtualMachine.mem_size - guestAddress) {
             return false;
         }
@@ -219,6 +220,7 @@ namespace {
             return false;
         }
 
+        /* A shared file becomes private to this VM on its first write. */
         std::filesystem::copy_file(file.hostPath, localPath, error);
 
         if (error) {
@@ -410,6 +412,7 @@ bool handleFileIo(GuestContext& context, struct vm& virtualMachine)
     auto *data = reinterpret_cast<std::uint8_t *>(virtualMachine.run) + dataOffset;
 
     if (io.direction == KVM_EXIT_IO_OUT) {
+        /* OUT provides the guest address of file_request. */
         std::uint32_t requestAddress;
         std::memcpy(&requestAddress, data, sizeof(requestAddress));
 
@@ -427,6 +430,7 @@ bool handleFileIo(GuestContext& context, struct vm& virtualMachine)
     }
 
     if (io.direction == KVM_EXIT_IO_IN) {
+        /* The following IN returns the result of the request. */
         std::int32_t result = -1;
 
         if (!context.fileState.pendingResults.empty()) {

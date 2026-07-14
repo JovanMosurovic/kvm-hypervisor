@@ -5,12 +5,18 @@
 #include <stdint.h>
 #include <linux/kvm.h>
 
-#define GUEST_START_ADDR 0x8000
+/*
+ * KVM exposes the system, a VM and its vCPU through separate file descriptors.
+ * Long mode is configured through CR0, CR3, CR4 and EFER,
+ * while regular CPU state such as RIP, RSP and RFLAGS is set before the first KVM_RUN call.
+ */
+
+#define GUEST_START_ADDR 0x8000 /* Page tables occupy guest memory below this address */
 #define PAGE_SIZE_4K (4u * 1024u)
 #define PAGE_SIZE_2M (2u * 1024u * 1024u)
 #define PAGE_TABLE_ENTRIES 512u
 
-#define IRQ_NUM   32
+#define IRQ_NUM   32 /* Entries 0-31 are reserved for CPU exceptions */
 #define IRQ_COUNT 2 /* One interrupt assigns the mode and one transfers data */
 
 /* Page table entry flags */
@@ -27,12 +33,12 @@
 #define EFER_LMA (1u << 10)	/* EFER: indicates that long mode is active */
 
 struct vm {
-	int kvm_fd;
-	int vm_fd;
-	int vcpu_fd;
-	char *mem;
+	int kvm_fd;          /* KVM subsystem */
+	int vm_fd;           /* One virtual machine */
+	int vcpu_fd;         /* Single virtual CPU created for this VM */
+	char *mem;           /* Host mapping of guest physical memory */
 	size_t mem_size;
-	struct kvm_run *run;
+	struct kvm_run *run; /* Shared area containing the reason for a VM exit */
 	int run_mmap_size;
 };
 
