@@ -115,6 +115,86 @@ The expected output contains:
 B4: content="ABXD" (expected ABXD)
 ```
 
+### B5: `O_TRUNC` and `SEEK_END`
+
+Build and run the second additional file-system test:
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b5_truncate_seek_end.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b5_truncate_seek_end.img
+```
+
+The expected output contains:
+
+```text
+B5: content="ABX" (expected ABX)
+```
+
+### B6: `O_TRUNC` only
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b6_truncate.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b6_truncate.img
+```
+
+Expected output:
+
+```text
+B6: size=0 (expected 0)
+```
+
+### B7: `O_APPEND` only
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b7_append.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b7_append.img
+```
+
+Expected output:
+
+```text
+B7: content="ABCDEF" (expected ABCDEF)
+```
+
+### B8: `SEEK_CUR` only
+
+`SEEK_SET` is already covered by the original B2 test, so this test checks only
+the new `SEEK_CUR` behavior.
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b8_seek_cur.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b8_seek_cur.img
+```
+
+Expected output:
+
+```text
+B8: content="ABCDXF" (expected ABCDXF)
+```
+
+### B9: `SEEK_END` only
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b9_seek_end.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b9_seek_end.img
+```
+
+Expected output:
+
+```text
+B9: content="ABCDYF" (expected ABCDYF)
+```
+
 ## Optional cleanup
 
 The guests create local files in `vm_files/`. Remove them when a clean run is

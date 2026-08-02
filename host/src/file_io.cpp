@@ -95,6 +95,11 @@ namespace {
         return flags == FILE_OPEN_APPEND;
     }
 
+    bool isTruncateFlag(int flags)
+    {
+        return (flags & FILE_OPEN_TRUNCATE) != 0;
+    }
+
     bool hasReadAccess(int flags)
     {
         if (isAppendFlag(flags)) {
@@ -122,14 +127,19 @@ namespace {
         }
 
         constexpr int accessMask = FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE;
-        constexpr int allowedMask = accessMask | FILE_OPEN_CREATE;
+        constexpr int allowedMask = accessMask | FILE_OPEN_CREATE | FILE_OPEN_TRUNCATE;
 
         if ((flags & ~allowedMask) != 0) {
             return false;
         }
 
         const int accessMode = flags & accessMask;
-        return accessMode == FILE_OPEN_READ || accessMode == FILE_OPEN_WRITE || accessMode == FILE_OPEN_READ_WRITE;
+
+        if (accessMode != FILE_OPEN_READ && accessMode != FILE_OPEN_WRITE && accessMode != FILE_OPEN_READ_WRITE) {
+            return false;
+        }
+
+        return !isTruncateFlag(flags) || accessMode != FILE_OPEN_READ;
     }
 
     int toHostOpenFlags(int flags)
@@ -151,6 +161,10 @@ namespace {
 
         if ((flags & FILE_OPEN_CREATE) != 0) {
             hostFlags |= O_CREAT;
+        }
+
+        if (isTruncateFlag(flags)) {
+            hostFlags |= O_TRUNC;
         }
 
         return hostFlags;
@@ -292,13 +306,19 @@ namespace {
         }
 
         const int descriptor = context.fileState.nextDescriptor++;
-        context.fileState.openFiles.emplace(descriptor, OpenFile{
+        const auto fileIterator = context.fileState.openFiles.emplace(descriptor, OpenFile{
             hostDescriptor,
             request.flags,
             name,
             resolvedFile.path.string(),
             resolvedFile.shared
-        });
+        }).first;
+
+        if (resolvedFile.shared && isTruncateFlag(request.flags) && !prepareFileForWrite(context, fileIterator->second)) {
+            ::close(fileIterator->second.hostDescriptor);
+            context.fileState.openFiles.erase(fileIterator);
+            return -1;
+        }
 
         return descriptor;
     }
@@ -380,7 +400,7 @@ namespace {
             offset = request.offset;
         } else if (request.flags == FILE_SEEK_END) {
             hostWhence = SEEK_END;
-            offset = 0;
+            offset = request.offset;
         } else if (request.flags == FILE_SEEK_CUR) {
             hostWhence = SEEK_CUR;
             offset = request.offset;

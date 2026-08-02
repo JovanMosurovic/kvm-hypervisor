@@ -8,7 +8,9 @@ BUILD_DIR ?= build
 A_IMAGES = $(BUILD_DIR)/A/a1_hello_world.img $(BUILD_DIR)/A/a2_echo.img
 B_IMAGES = $(BUILD_DIR)/B/b1_create_write_read.img $(BUILD_DIR)/B/b2_open_flags.img \
 	$(BUILD_DIR)/B/b3_shared_reader.img $(BUILD_DIR)/B/b3_shared_writer.img \
-	$(BUILD_DIR)/B/b4_seek_cur_append.img
+	$(BUILD_DIR)/B/b4_seek_cur_append.img $(BUILD_DIR)/B/b5_truncate_seek_end.img \
+	$(BUILD_DIR)/B/b6_truncate.img $(BUILD_DIR)/B/b7_append.img \
+	$(BUILD_DIR)/B/b8_seek_cur.img $(BUILD_DIR)/B/b9_seek_end.img
 
 .PHONY: all clean
 
