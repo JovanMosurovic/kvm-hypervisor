@@ -98,6 +98,23 @@ cat shared.txt
 The original `shared.txt` should still contain `ORIGINAL` after the writer VM
 finishes, because the writer receives a private copy before writing.
 
+### B4: `SEEK_CUR` and `O_APPEND`
+
+Build and run the additional modification test:
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b4_seek_cur_append.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b4_seek_cur_append.img
+```
+
+The expected output contains:
+
+```text
+B4: content="ABXD" (expected ABXD)
+```
+
 ## Optional cleanup
 
 The guests create local files in `vm_files/`. Remove them when a clean run is

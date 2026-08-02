@@ -7,7 +7,8 @@ BUILD_DIR ?= build
 
 A_IMAGES = $(BUILD_DIR)/A/a1_hello_world.img $(BUILD_DIR)/A/a2_echo.img
 B_IMAGES = $(BUILD_DIR)/B/b1_create_write_read.img $(BUILD_DIR)/B/b2_open_flags.img \
-	$(BUILD_DIR)/B/b3_shared_reader.img $(BUILD_DIR)/B/b3_shared_writer.img
+	$(BUILD_DIR)/B/b3_shared_reader.img $(BUILD_DIR)/B/b3_shared_writer.img \
+	$(BUILD_DIR)/B/b4_seek_cur_append.img
 
 .PHONY: all clean
 

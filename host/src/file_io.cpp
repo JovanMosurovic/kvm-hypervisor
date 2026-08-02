@@ -89,20 +89,38 @@ namespace {
         return false;
     }
 
+    bool isAppendFlag(int flags)
+    {
+        // O_APPEND is 9, which would otherwise look like O_RD | O_CREATE.
+        return flags == FILE_OPEN_APPEND;
+    }
+
     bool hasReadAccess(int flags)
     {
+        if (isAppendFlag(flags)) {
+            return false;
+        }
+
         const int accessMode = flags & (FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE);
         return accessMode == FILE_OPEN_READ || accessMode == FILE_OPEN_READ_WRITE;
     }
 
     bool hasWriteAccess(int flags)
     {
+        if (isAppendFlag(flags)) {
+            return true;
+        }
+
         const int accessMode = flags & (FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE);
         return accessMode == FILE_OPEN_WRITE || accessMode == FILE_OPEN_READ_WRITE;
     }
 
     bool areValidOpenFlags(int flags)
     {
+        if (isAppendFlag(flags)) {
+            return true;
+        }
+
         constexpr int accessMask = FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE;
         constexpr int allowedMask = accessMask | FILE_OPEN_CREATE;
 
@@ -116,6 +134,10 @@ namespace {
 
     int toHostOpenFlags(int flags)
     {
+        if (isAppendFlag(flags)) {
+            return O_WRONLY | O_APPEND;
+        }
+
         int hostFlags = 0;
         const int accessMode = flags & (FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE);
 
@@ -253,7 +275,7 @@ namespace {
 
         const ResolvedFile resolvedFile = resolveFile(context, name);
 
-        if (!resolvedFile.shared && (request.flags & FILE_OPEN_CREATE) != 0) {
+        if (!resolvedFile.shared && (request.flags & FILE_OPEN_CREATE) != 0 && !isAppendFlag(request.flags)) {
             std::error_code error;
             std::filesystem::create_directories(resolvedFile.path.parent_path(), error);
 
@@ -359,6 +381,9 @@ namespace {
         } else if (request.flags == FILE_SEEK_END) {
             hostWhence = SEEK_END;
             offset = 0;
+        } else if (request.flags == FILE_SEEK_CUR) {
+            hostWhence = SEEK_CUR;
+            offset = request.offset;
         } else {
             return -1;
         }

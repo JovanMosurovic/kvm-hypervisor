@@ -7,9 +7,11 @@
 #define O_WR FILE_OPEN_WRITE
 #define O_RDWR FILE_OPEN_READ_WRITE
 #define O_CREATE FILE_OPEN_CREATE
+#define O_APPEND FILE_OPEN_APPEND
 
 #define SEEK_SET FILE_SEEK_SET
 #define SEEK_END FILE_SEEK_END
+#define SEEK_CUR FILE_SEEK_CUR
 
 int open(const char *path, int flags);
 int close(int fd);

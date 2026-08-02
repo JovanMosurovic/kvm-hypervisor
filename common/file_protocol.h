@@ -18,12 +18,14 @@ enum file_open_flag {
 	FILE_OPEN_READ = 1,
 	FILE_OPEN_WRITE = 2,
 	FILE_OPEN_READ_WRITE = 4,
-	FILE_OPEN_CREATE = 8
+	FILE_OPEN_CREATE = 8,
+	FILE_OPEN_APPEND = 9
 };
 
 enum file_seek_flag {
 	FILE_SEEK_SET = 1,
-	FILE_SEEK_END = 2
+	FILE_SEEK_END = 2,
+	FILE_SEEK_CUR = 3
 };
 
 struct file_request {
