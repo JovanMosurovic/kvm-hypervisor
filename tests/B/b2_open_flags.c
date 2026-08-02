@@ -51,7 +51,7 @@ __attribute__((noreturn))
 __attribute__((section(".start")))
 _start(void)
 {
-	int missing_fd = open("b2_missing.txt", O_RD);
+	int missing_fd = open("b2missing.txt", O_RD);
 	serial_puts("B2: open(missing, O_RD) -> fd=");
 	serial_put_int(missing_fd);
 	serial_puts(missing_fd < 0 ? " (OK, expected -1)\n" : " (FAIL, expected -1)\n");
@@ -59,7 +59,7 @@ _start(void)
 	const char *msg = "RDWR-OK";
 	char buf[16];
 
-	int fd = open("b2_rdwr.txt", O_RDWR | O_CREATE);
+	int fd = open("b2rdwr.txt", O_RDWR | O_CREATE);
 	serial_puts("B2: open(O_RDWR|O_CREATE) -> fd=");
 	serial_put_int(fd);
 	serial_putc('\n');

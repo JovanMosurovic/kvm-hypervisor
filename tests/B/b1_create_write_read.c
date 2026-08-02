@@ -48,7 +48,7 @@ __attribute__((noreturn))
 __attribute__((section(".start")))
 _start(void)
 {
-	const char *path = "b1_data.txt";
+	const char *path = "b1data.txt";
 	const char *msg  = "Hello, file!\n";
 	char buf[64];
 
