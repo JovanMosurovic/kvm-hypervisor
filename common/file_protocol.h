@@ -20,7 +20,8 @@ enum file_open_flag {
 	FILE_OPEN_READ_WRITE = 4,
 	FILE_OPEN_CREATE = 8,
 	FILE_OPEN_APPEND = 9,
-	FILE_OPEN_TRUNCATE = 16
+	FILE_OPEN_TRUNCATE = 16,
+	FILE_OPEN_EXCLUSIVE = 32
 };
 
 enum file_seek_flag {

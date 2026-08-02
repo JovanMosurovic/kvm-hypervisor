@@ -100,6 +100,11 @@ namespace {
         return (flags & FILE_OPEN_TRUNCATE) != 0;
     }
 
+    bool isExclusiveFlag(int flags)
+    {
+        return (flags & FILE_OPEN_EXCLUSIVE) != 0;
+    }
+
     bool hasReadAccess(int flags)
     {
         if (isAppendFlag(flags)) {
@@ -127,7 +132,7 @@ namespace {
         }
 
         constexpr int accessMask = FILE_OPEN_READ | FILE_OPEN_WRITE | FILE_OPEN_READ_WRITE;
-        constexpr int allowedMask = accessMask | FILE_OPEN_CREATE | FILE_OPEN_TRUNCATE;
+        constexpr int allowedMask = accessMask | FILE_OPEN_CREATE | FILE_OPEN_TRUNCATE | FILE_OPEN_EXCLUSIVE;
 
         if ((flags & ~allowedMask) != 0) {
             return false;
@@ -136,6 +141,10 @@ namespace {
         const int accessMode = flags & accessMask;
 
         if (accessMode != FILE_OPEN_READ && accessMode != FILE_OPEN_WRITE && accessMode != FILE_OPEN_READ_WRITE) {
+            return false;
+        }
+
+        if (isExclusiveFlag(flags) && (flags & FILE_OPEN_CREATE) == 0) {
             return false;
         }
 
@@ -165,6 +174,10 @@ namespace {
 
         if (isTruncateFlag(flags)) {
             hostFlags |= O_TRUNC;
+        }
+
+        if (isExclusiveFlag(flags)) {
+            hostFlags |= O_EXCL;
         }
 
         return hostFlags;
@@ -288,6 +301,10 @@ namespace {
         }
 
         const ResolvedFile resolvedFile = resolveFile(context, name);
+
+        if (resolvedFile.shared && isExclusiveFlag(request.flags)) {
+            return -1;
+        }
 
         if (!resolvedFile.shared && (request.flags & FILE_OPEN_CREATE) != 0 && !isAppendFlag(request.flags)) {
             std::error_code error;

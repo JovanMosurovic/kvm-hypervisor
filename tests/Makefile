@@ -10,7 +10,8 @@ B_IMAGES = $(BUILD_DIR)/B/b1_create_write_read.img $(BUILD_DIR)/B/b2_open_flags.
 	$(BUILD_DIR)/B/b3_shared_reader.img $(BUILD_DIR)/B/b3_shared_writer.img \
 	$(BUILD_DIR)/B/b4_seek_cur_append.img $(BUILD_DIR)/B/b5_truncate_seek_end.img \
 	$(BUILD_DIR)/B/b6_truncate.img $(BUILD_DIR)/B/b7_append.img \
-	$(BUILD_DIR)/B/b8_seek_cur.img $(BUILD_DIR)/B/b9_seek_end.img
+	$(BUILD_DIR)/B/b8_seek_cur.img $(BUILD_DIR)/B/b9_seek_end.img \
+	$(BUILD_DIR)/B/b10_exclusive.img
 
 .PHONY: all clean
 

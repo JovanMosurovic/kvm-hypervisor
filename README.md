@@ -195,6 +195,23 @@ Expected output:
 B9: content="ABCDYF" (expected ABCDYF)
 ```
 
+### B10: `O_EXCL` with `O_CREATE`
+
+The existing file must fail to open, while the new file must be created.
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b10_exclusive.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b10_exclusive.img
+```
+
+Expected output contains:
+
+```text
+B10: existing=-1 (expected -1), new=success
+```
+
 ## Optional cleanup
 
 The guests create local files in `vm_files/`. Remove them when a clean run is
