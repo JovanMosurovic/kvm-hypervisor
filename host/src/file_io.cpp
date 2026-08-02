@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
 
@@ -469,6 +470,24 @@ namespace {
         return result == 0 ? 0 : -1;
     }
 
+    int getFileSize(GuestContext& context, const file_request& request)
+    {
+        const auto file = context.fileState.openFiles.find(request.descriptor);
+
+        if (file == context.fileState.openFiles.end()) {
+            return -1;
+        }
+
+        struct stat information;
+
+        if (::fstat(file->second.hostDescriptor, &information) < 0 ||
+            information.st_size < 0 || information.st_size > std::numeric_limits<int>::max()) {
+            return -1;
+        }
+
+        return static_cast<int>(information.st_size);
+    }
+
     int processFileRequest(GuestContext& context, struct vm& virtualMachine, const file_request& request)
     {
         switch (request.operation) {
@@ -486,6 +505,8 @@ namespace {
             return unlinkFile(context, virtualMachine, request);
         case FILE_OPERATION_FTRUNCATE:
             return truncateOpenFile(context, request);
+        case FILE_OPERATION_FILE_SIZE:
+            return getFileSize(context, request);
         default:
             return -1;
         }

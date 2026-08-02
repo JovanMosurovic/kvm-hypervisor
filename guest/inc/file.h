@@ -22,5 +22,6 @@ int write(int fd, const char *buf, int count);
 int lseek(int fd, const int offset, int off_flag);
 int unlink(const char *path);
 int ftruncate(int fd, int length);
+int file_size(int fd);
 
 #endif /* FILE_H */

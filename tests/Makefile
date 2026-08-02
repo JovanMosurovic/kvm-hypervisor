@@ -12,7 +12,7 @@ B_IMAGES = $(BUILD_DIR)/B/b1_create_write_read.img $(BUILD_DIR)/B/b2_open_flags.
 	$(BUILD_DIR)/B/b6_truncate.img $(BUILD_DIR)/B/b7_append.img \
 	$(BUILD_DIR)/B/b8_seek_cur.img $(BUILD_DIR)/B/b9_seek_end.img \
 	$(BUILD_DIR)/B/b10_exclusive.img $(BUILD_DIR)/B/b11_unlink.img \
-	$(BUILD_DIR)/B/b12_ftruncate.img
+	$(BUILD_DIR)/B/b12_ftruncate.img $(BUILD_DIR)/B/b13_file_size.img
 
 .PHONY: all clean
 

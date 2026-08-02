@@ -248,6 +248,23 @@ Expected output contains:
 B12: content="HE" (expected HE)
 ```
 
+### B13: file size
+
+The test checks the size of an open file after writing five bytes.
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b13_file_size.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b13_file_size.img
+```
+
+Expected output contains:
+
+```text
+B13: size=5 (expected 5)
+```
+
 ## Optional cleanup
 
 The guests create local files in `vm_files/`. Remove them when a clean run is

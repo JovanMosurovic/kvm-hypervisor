@@ -98,3 +98,13 @@ int ftruncate(int fd, int length)
 
 	return submit_file_request(&request);
 }
+
+int file_size(int fd)
+{
+	struct file_request request = {
+		.operation = FILE_OPERATION_FILE_SIZE,
+		.descriptor = fd,
+	};
+
+	return submit_file_request(&request);
+}
