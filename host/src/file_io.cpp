@@ -434,6 +434,41 @@ namespace {
         return static_cast<int>(result);
     }
 
+    int unlinkFile(GuestContext& context, struct vm& virtualMachine, const file_request& request)
+    {
+        std::string name;
+
+        if (!readGuestFileName(virtualMachine, request.buffer, name)) {
+            return -1;
+        }
+
+        const ResolvedFile resolvedFile = resolveFile(context, name);
+
+        if (resolvedFile.shared) {
+            return -1;
+        }
+
+        std::error_code error;
+        const bool removed = std::filesystem::remove(resolvedFile.path, error);
+        return removed && !error ? 0 : -1;
+    }
+
+    int truncateOpenFile(GuestContext& context, const file_request& request)
+    {
+        const auto file = context.fileState.openFiles.find(request.descriptor);
+
+        if (file == context.fileState.openFiles.end() || !hasWriteAccess(file->second.flags) || request.offset < 0) {
+            return -1;
+        }
+
+        if (!prepareFileForWrite(context, file->second)) {
+            return -1;
+        }
+
+        const int result = ::ftruncate(file->second.hostDescriptor, static_cast<off_t>(request.offset));
+        return result == 0 ? 0 : -1;
+    }
+
     int processFileRequest(GuestContext& context, struct vm& virtualMachine, const file_request& request)
     {
         switch (request.operation) {
@@ -447,6 +482,10 @@ namespace {
             return writeFile(context, virtualMachine, request);
         case FILE_OPERATION_LSEEK:
             return seekFile(context, request);
+        case FILE_OPERATION_UNLINK:
+            return unlinkFile(context, virtualMachine, request);
+        case FILE_OPERATION_FTRUNCATE:
+            return truncateOpenFile(context, request);
         default:
             return -1;
         }

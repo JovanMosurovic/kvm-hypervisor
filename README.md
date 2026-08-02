@@ -212,6 +212,42 @@ Expected output contains:
 B10: existing=-1 (expected -1), new=success
 ```
 
+### B11: `unlink`
+
+The test creates a local file, removes it, and verifies that it cannot be
+opened afterwards.
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b11_unlink.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b11_unlink.img
+```
+
+Expected output contains:
+
+```text
+B11: unlink=success, reopen=failure (expected)
+```
+
+### B12: `ftruncate`
+
+The test writes `HELLO`, truncates the open file to two bytes, and reads it
+back.
+
+```bash
+rm -rf vm_files
+make -C tests build/B/b12_ftruncate.img
+./host/build/hypervisor -m 2 -p 4 \
+    -g tests/build/B/b12_ftruncate.img
+```
+
+Expected output contains:
+
+```text
+B12: content="HE" (expected HE)
+```
+
 ## Optional cleanup
 
 The guests create local files in `vm_files/`. Remove them when a clean run is

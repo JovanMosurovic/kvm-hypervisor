@@ -74,3 +74,27 @@ int lseek(int fd, const int offset, int off_flag)
 
 	return submit_file_request(&request);
 }
+
+int unlink(const char *path)
+{
+	if (path == 0)
+		return -1;
+
+	struct file_request request = {
+		.operation = FILE_OPERATION_UNLINK,
+		.buffer = (uint32_t)(uintptr_t)path,
+	};
+
+	return submit_file_request(&request);
+}
+
+int ftruncate(int fd, int length)
+{
+	struct file_request request = {
+		.operation = FILE_OPERATION_FTRUNCATE,
+		.descriptor = fd,
+		.offset = length,
+	};
+
+	return submit_file_request(&request);
+}
